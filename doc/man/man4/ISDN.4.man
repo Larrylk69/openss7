@@ -2,7 +2,7 @@
 .\" vim: ft=nroff sw=4 noet nocin nosi com=b\:.\\\" fo+=tcqlorn tw=77
 .\" =========================================================================
 .\"
-.\" @(#) doc/man/man4/ISDN.4.man
+.\" @(#) doc/man/man4/isdn.4.man
 .\"
 .\" =========================================================================
 .\"
@@ -102,269 +102,173 @@ search-ignore CGIQOSTU
 .\"
 .\"
 .SH NAME
-.B ISDN
-\- OpenSS7 ISDN Devices
+.B isdn, q931
+\- Integrated Services Digital Network (ISDN) Driver
 .\"
 .\"
 .SH SYNOPSIS
 .PP
-.B #include <sys/stream.h>
+.B #include <ss7/cci.h>
+.br
+.B #include <ss7/isdni.h>
+.br
+.B #include <ss7/isdni_ioctl.h>
+.\"
+.\"
 .HP
-.BI "int " isdn_stream " = open(" isdn_device ", " flags );
-.HP
-.BI "int " retval " = ioctl(" isdn_stream ", " \fRI_PUSH\fI ", " isdn_module);
+.BI "int " isdn_stream " = open(" device ", " flag );
 .\"
 .\"
 .SH DESCRIPTION
 .PP
-The
 .B ISDN
-related collection of drivers and modules provide ISDN
+is an implementation of the Integrated Services Digital Network (ISDN) Layer 3
+as defined in ITU-T Recommendation Q.931.
 .[
-q920
+q.931
 .]
+.B ISDN
+provides call control of telephone calls over the ISDN.
+.B ISDN
+uses the services of the Q.921 Data Link,
 .[
-q930
+q921
 .]
-capabilities in a number of related forms, including H.323, V5.2, GR-303 and
-GSM variants.
+.BR dl (4),
+or ISDN Q.921 User Adaptation Layer,
+.[
+iuarfc
+.]
+.BR iua (4),
+to transfer packets.
 .\"
 .\"
-.SS Drivers
 .PP
 .B ISDN
-provides the following
-.I STREAMS
-pseudo-device drivers:
+is implemented as a
+.IR STREAMS (4)
+multiplexing driver.
+.BR dl "(4) or " iua (4)
+streams are linked under the
+.B ISDN
+multiplexing driver using the
+.IR I_LINK " or " I_PLINK
+commands of
+.BR streamio (7),
+to provide data link services to
+.BR ISDN .
+Once linked, the streams are configured using
+.BR isdn_ioctl (4)
+IO controls.  This function is normally performed by the ISDN Configuration
+Daemon,
+.BR isdnconfd (8).
+See also,
+.BR isdn (8).
+.\"
+.\"
+.PP
+.BR dl (4)
+and
+.BR iua (4)
+Streams provide a Data Link Provider Interface (DLPI),
+.[
+dlpi revision 2.0.0 draft 2
+.]
+.BR dlpi (7),
+service interface to the
+.B ISDN
+user.
+.B ISDN
+provides the stream types listed below.  To select a stream type, the
+.I device
+argument to the
+.BR open (2s)
+call can be selected from the following:
 .\"
 .\"
 .TP
-.BR isdn (4)
-.I Integrated Services Digital Network (ISDN) Q.931/932 Network Layer
-protocol layer
+.I /dev/isdn
+This device provides the
+.B ISDN
+protocol service interface using the CC-primitives of the Call Control Interface (CCI) described in
+.BR cci (7),
+as interpreted for use with
+.B ISDN
+as described in
+.BR cci_isdn (7).
+This interface is suitable for use with other SS7 modules and drivers, as well
+as with the
+.BR cframe (3)
+library using the
+.B OpenSwitch
+call framework.
+.\"
+.\"
+.SH NOTICES
+.PP
+Unlike other SS7 protocol modules and drivers providing transport services,
+.B ISDN
+does not provide a
+.BR sockets (3)
+interface.  This is because the special needs of call control are divorced
+from the sockets paradigm.
+.\"
+.\"
+.SH IOCTLS
+.PP
+All interfaces support a set of management IO controls using
+.BR ioctl (2s)
+and
+.I I_STR
+commands to the
+.BR streamio (7)
+system calls on the
+.I isdn_stream
+file descriptor.  These management IO controls are documented in
+.BR isdn_ioctl (4).
+.\"
+.\"
+.SH FILES
+.PP
+.BR <ss7/cci.h> ,
+.BR <ss7/isdni.h> ,
+.BR <ss7/isdni_ioctl.h> ,
+.BR <ss7/cframe_isdn.h> .
+.\"
+.\"
+.SH DEVICES
+.PP
+.IR /dev/isdn .
+.\"
+.\"
+.SH "SEE ALSO"
+.PP
+.BR ISDN (4),
+.BR isdnconfd (8),
+.BR cci (7),
+.BR cci_isdn (7),
+.BR isdni (7),
+.BR isdn_ioctl (4),
+.BR cframe (3).
+.\"
+.\"
+.SH VERSIONS
+.PP
+The
+.B ISDN
+interface is specific to the
+.BR OpenSS7
+ISDN stack.  This is Version 2 of the interface.
+.PP
+CCI interfaces are consistent with CCI Revision 0.8.2.
+.\"
+.\"
+.XX
 .[
 q931
 .]
 .[
 q932
-.]
-that provides a Call Control Interface,
-.BR cci (7),
-for ISDN operation,
-.BR cci_isdn (7),
-and a Local Management Interface,
-.BR lmi_ioctl (4),
-for ISDN management,
-.BR isdn_ioctl (4).
-.\"
-.\"
-.TP
-.BR capi (4)
-.I Common ISDN Application Programming Interface (CAPI)
-.[
-capi20
-.]
-protocol layer that provides the Call Control Interace,
-.BR cci (7),
-for ISDN operation,
-.BR cci_isdn (7),
-for CAPI devices installed and registered on the local system,
-and a Local Management Interface,
-.BR lmi_ioctl (4),
-for CAPI management,
-.BR capi_ioctl (4).
-.\"
-.\"
-.\".TP
-.\".BR h225 (4)
-.\".I ITU-T Recommendation H.225.0
-.\"protocol layer tha provides the Call Control Interface,
-.\".BR cci (7),
-.\"for H225 operation,
-.\".BR cci_h225 (7),
-.\"and a Local Management Interface,
-.\".BR lmi_ioctl (4),
-.\"for H.255.0 management,
-.\".BR h225_ioctl (4).
-.\"
-.\"
-.\".TP
-.\".BR bssap (4)
-.\".I Base Station System (BSS) Application Part GSM 04.08
-.\"protocol layer that provides the Call Control Interface,
-.\".BR cci (7),
-.\"for BSSAP operation,
-.\".BR cci_bssap (7),
-.\"and a Local Management Interface,
-.\".BR lmi_ioctl (4),
-.\"for BSSAP management,
-.\".BR bssap_ioctl (4).
-.\"
-.\"
-.TP
-.BR v5 (4)
-.I V5.2
-protocol layer that provides the Call Control Interface,
-.BR cci (7),
-for V5.2 operation,
-.BR v5_ioctl (4).
-.\"
-.\"
-.TP
-.BR gr303 (4)
-.I GR-303-CORE
-protocol layer that provides the Call Control Interface,
-.BR cci (7),
-for GR-303-CORE operation,
-.BR cci_gr303 (7),
-and a Local Management Interface,
-.BR lmi_ioctl (4),
-for GR-303-CORE management,
-.BR gr303_ioctl (4).
-.\"
-.\"
-.TP
-.BR dl (4)
-.I Q.921 (LAPD), Q.922 (LAPF), X.25 (LAPB),
-.[
-q921
-.]
-.[
-q922
-.]
-.[
-x25
-.]
-Data Link Provider Interface,
-.BR dlpi (7),
-for LAPD, LAPF and LAPB,
-.BR dlpi_lapd (7),
-.BR dlpi_lapf (7),
-.BR dlpi_lapb (7),
-and a Local Management Interface,
-.BR lmi_ioctl (4),
-for DL management,
-.BR dl_ioctl (4).
-.\"
-.\"
-.SS Modules
-.PP
-.B ISDN
-provides the following pushable
-.I STREAMS
-modules:
-.\"
-.\"
-.TP
-.BR hdlc (4)
-.I ISO 3309/4335 High-Level Data Link Control (HDLC)
-.[
-iso/iec 3309:1988
-.]
-.[
-iso/iec 4335:1988
-.]
-Communications Device Interface,
-.BR cdi (7),
-module, that can be pushed over a stream that conforms to the Channel
-Interface (CHI),
-.BR chi (7).
-.\"
-.\"
-.SS Devices
-.PP
-.B ISDN
-provides the following
-.I STREAMS
-device drivers:
-.\"
-.\"
-.TP
-.BR x400p (4)
-.I T400P-SS7 and E400P-SS7 4-span T1/E1
-card driver that provides a Channel Interface,
-.BR chi (7),
-and Multiplex Interface,
-.BR mxi (7).
-The
-.BR hdlc (4),
-module cam be pushed over the
-.BR chi (7)
-device and linked under the
-.BR dl (4)
-driver to form a complete ISDN Q.921 data link.  The
-.BR mxi (7)
-device can be used to switch bearer channels, see
-.BR mx (4).
-.\"
-.\"
-.TP
-.BR x100p (4)
-.I T100P-SS7 and E100P-SS7 1-span T1/E1
-card driver that provides a Channel Interface,
-.BR chi (7),
-and Multiplex Interface,
-.BR mxi (7).
-The
-.BR hdlc (4),
-module cam be pushed over the
-.BR chi (7)
-device and linked under the
-.BR dl (4)
-driver to form a complete ISDN Q.921 data link.  The
-.BR mxi (7)
-device can be used to switch bearer channels, see
-.BR mx (4).
-.\"
-.\"
-.SH DEVICES
-.PP
-.IR /dev/lapd ,
-.IR /dev/isdn ,
-.IR /dev/capi ,
-.IR /dev/v5 ,
-.IR /dev/gr303 ,
-.IR /dev/dl .
-.\"
-.\"
-.\".SH NOTICES
-.\".PP
-.\"
-.\"
-.\".SH BUGS
-.\".PP
-.\"
-.\"
-.SH "SEE ALSO"
-.PP
-.BR isdnconfd (8),
-.BR SIGTRAN (4),
-.BR iua (4),
-.BR v5ua (4),
-.BR gr303ua (4),
-.BR MG (4).
-.BR SS7 (4),
-.\"
-.\"
-.SH VERSIONS
-.PP
-This manpage was updated @PACKAGE_DATE@ for
-.B @PACKAGE@
-release
-.BR "@VERSION@" .
-.\"
-.\"
-.PP
-Most of the devices and modules listed here do no appear until
-.BR strss7-0.8.4 .
-.\"
-.\"
-.XX
-.[
-q920
-.]
-.[
-q930
 .]
 .\"
 .[
